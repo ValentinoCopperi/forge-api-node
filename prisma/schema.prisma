@@ -4,12 +4,34 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
   DIRECTOR
   GERENTE
   EMPLEADO
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskCategory {
+  DESARROLLO
+  DISENO
+  TESTING
+  DOCUMENTACION
+  OTRO
+}
+
+enum OrganizationUserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
 
 enum TaskStatus {
@@ -19,23 +41,41 @@ enum TaskStatus {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  name         String
-  email        String     @unique
-  passwordHash String
-   avatarUrl    String?
-  tasks        Task[]
-  userRoles    UserRole[]
-  sessions     Session[]
+  id                Int                @id @default(autoincrement())
+  name              String
+  email             String             @unique
+  passwordHash      String
+  avatarUrl         String?
+  userRoles         UserRole[]
+  sessions          Session[]
+  tasksDesignatedTo Task[]             @relation("DesignatedTo")
+  tasksDesignatedBy Task[]             @relation("DesignatedBy")
+  projects          Project[]
+  organizationUsers OrganizationUser[]
+  taskComments      TaskComment[]
 }
 
 model Task {
-  id     Int    @id @default(autoincrement())
-  title  String
-  description String?
-  status   TaskStatus @default(PENDING)
-  userId Int
-  user   User   @relation(fields: [userId], references: [id])
+  id               Int           @id @default(autoincrement())
+  title            String
+  description      String?
+  status           TaskStatus    @default(PENDING)
+  priority         TaskPriority  @default(MEDIUM)
+  category         TaskCategory  @default(OTRO)
+  designatedTo     Int?
+  designatedBy     Int?
+  designatedToUser User?          @relation("DesignatedTo", fields: [designatedTo], references: [id])
+  designatedByUser User?            @relation("DesignatedBy", fields: [designatedBy], references: [id])
+  project          Project?      @relation(fields: [projectId], references: [id])
+  projectId        Int?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+  deadline         DateTime?
+  taskComments     TaskComment[]
+
+  @@index([designatedTo])
+  @@index([designatedBy])
+  @@index([projectId])
 }
 
 model Session {
@@ -46,16 +86,66 @@ model Session {
   revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-
 model UserRole {
   userId Int
-  role Role
+  role   Role
   user   User @relation(fields: [userId], references: [id])
 
   @@id([userId, role])
+}
+
+model Organization {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  updatedAt   DateTime  @default(now()) @updatedAt
+  projects    Project[]
+
+  organizationUsers OrganizationUser[]
+}
+
+model OrganizationUser {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  role           OrganizationUserRole @default(MEMBER)  
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Project {
+  id             Int          @id @default(autoincrement())
+  name           String
+  description    String?
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  tasks          Task[]
+  managerId      Int
+  manager        User         @relation(fields: [managerId], references: [id])
+
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  taskId    Int
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  task      Task     @relation(fields: [taskId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
 }

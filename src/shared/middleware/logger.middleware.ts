@@ -11,7 +11,7 @@ export const LoggerMiddleware = (
   res.on("finish", () => {
     const duration = new Date().getTime() - executeTime.getTime();
 
-    if (res.statusCode === 200) {
+    if (res.statusCode === 200 || res.statusCode === 201) {
       logger.info({
         request_id: req.request_id,
         method: req.method,
