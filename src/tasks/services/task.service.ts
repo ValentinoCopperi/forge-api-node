@@ -23,7 +23,7 @@ interface I_TaskService {
     >
     findAll(): Promise<TaskWithUser[]>
 
-    create(data: { title: string, userId: number }): Promise<Task>
+    // create(data: { title: string, userId: number }): Promise<Task>
 
 }
 
@@ -124,22 +124,22 @@ export class TaskService implements I_TaskService {
     }
 
 
-    async create(data: { title: string; userId: number; }): Promise<Task> {
+    // async create(data: { title: string; userId: number; }): Promise<Task> {
 
-        const { title, userId } = data;
+    //     const { title, userId } = data;
 
-        if (isNaN(userId)) throw new AppError("UserId must be a number", 400);
+    //     if (isNaN(userId)) throw new AppError("UserId must be a number", 400);
 
-        if (!title || !userId) throw new AppError("Title and userId are required", 400);
+    //     if (!title || !userId) throw new AppError("Title and userId are required", 400);
 
-        if (await this.taskRepository.findByTitle(title)) throw new AppError(`Title : ${title} , cannot be used`, 404)
+    //     if (await this.taskRepository.findByTitle(title)) throw new AppError(`Title : ${title} , cannot be used`, 404)
 
-        const new_task = await this.taskRepository.create(data);
+    //     const new_task = await this.taskRepository.create(data);
 
-        await this.redisClient.del('tasks');
+    //     await this.redisClient.del('tasks');
 
-        return new_task;
-    }
+    //     return new_task;
+    // }
 
 
 

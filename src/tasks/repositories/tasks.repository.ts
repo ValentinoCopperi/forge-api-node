@@ -13,7 +13,7 @@ interface I_TaskRepository {
 
     findAll(): Promise<TaskWithUser[]>
 
-    create(data: { title: string, userId: number }): Promise<Task>
+    // create(data: { title: string, userId: number }): Promise<Task>
 
     findByTitle(title: string): Promise<boolean>
 
@@ -67,18 +67,18 @@ export class TaskRepository implements I_TaskRepository {
         });
     }
 
-    create(data: { title: string; userId: number; }): Promise<Task> {
+    // create(data: { title: string; userId: number; }): Promise<Task> {
 
-        const { title, userId } = data;
+    //     const { title, userId } = data;
 
-        return this.prisma.task.create({
-            data: {
-                title,
-                userId
-            }
-        })
+    //     return this.prisma.task.create({
+    //         data: {
+    //             title,
+    //             userId
+    //         }
+    //     })
 
-    }
+    // }
 
     async findByTitle(title: string): Promise<boolean> {
 

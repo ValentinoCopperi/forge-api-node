@@ -1,0 +1,114 @@
+import { OrganizationUserRole, PrismaClient } from "@prisma/client";
+import { AddUserToOrganizationDto, CreateOrganizationDto } from "../dtos/organizations.dto";
+import { OrganizationCreateResponse, organizationCreateSelect, OrganizationFindOneResponse, organizationFindOneSelect, OrganizationsGetAll, organizationsGetAllSelect } from "../types/organizations.types";
+
+
+interface I_OrganizationRepository {
+    create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse>
+    findAll(): Promise<OrganizationsGetAll[]>
+    findById(id: number): Promise<OrganizationFindOneResponse | null>
+    existsById(id: number): Promise<boolean>
+    userMembershipExists(organizationId: number, userId: number): Promise<boolean>
+    findMembershipRole(organizationId: number, userId: number): Promise<OrganizationUserRole | null>
+    insertOrganizationUser(data: AddUserToOrganizationDto): Promise<void>
+    deleteOrganizationUser(organizationId: number, userId: number): Promise<void>
+    addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
+    removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void>
+}
+
+export class OrganizationRepository implements I_OrganizationRepository {
+
+
+    constructor(private readonly prisma: PrismaClient) { }
+
+
+    addProjectToOrganization(data: { organizationId: number; projectId: number; }): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+
+    async removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+
+    async insertOrganizationUser(data: AddUserToOrganizationDto): Promise<void> {
+
+        const { organizationId, userId, role } = data;
+
+        await this.prisma.organizationUser.create({
+            data: {
+                organizationId,
+                userId,
+                role,
+            }
+        })
+
+    }
+
+
+    async deleteOrganizationUser(organizationId: number, userId: number): Promise<void> {
+
+        await this.prisma.organizationUser.deleteMany({
+            where: { organizationId, userId },
+        })
+
+    }
+
+
+    async userMembershipExists(organizationId: number, userId: number): Promise<boolean> {
+
+        const row = await this.prisma.organizationUser.findFirst({
+            where: { organizationId, userId },
+        })
+        return !!row;
+    }
+
+    async findMembershipRole(organizationId: number, userId: number): Promise<OrganizationUserRole | null> {
+
+        const row = await this.prisma.organizationUser.findFirst({
+            where: { organizationId, userId },
+            select: { role: true },
+        });
+
+        return row?.role ?? null;
+    }
+
+
+    async existsById(id: number): Promise<boolean> {
+
+        const organization = await this.prisma.organization.findUnique({
+            where: { id },
+            select: { id: true },
+        })
+        return !!organization;
+    }
+
+
+    async findById(id: number): Promise<OrganizationFindOneResponse | null> {
+
+        return this.prisma.organization.findUnique({
+            where: { id },
+            select: { ...organizationFindOneSelect }
+        })
+
+    }
+
+
+    async findAll(): Promise<OrganizationsGetAll[]> {
+
+        return this.prisma.organization.findMany({
+            select: { ...organizationsGetAllSelect }
+        })
+    }
+
+
+    async create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse> {
+
+        return this.prisma.organization.create({
+            data,
+            select: { ...organizationCreateSelect }
+        })
+    }
+
+}

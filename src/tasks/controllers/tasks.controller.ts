@@ -48,20 +48,20 @@ export class TaskController {
 
 
 
-        const body = createTaskDto.safeParse(req.body);
+        // const body = createTaskDto.safeParse(req.body);
 
-        if (!body.success) {
-            return res.status(400).json({
-                errors: body.error.flatten().fieldErrors
-            })
-        }
+        // if (!body.success) {
+        //     return res.status(400).json({
+        //         errors: body.error.flatten().fieldErrors
+        //     })
+        // }
 
-        const new_task = await this.taskService.create({
-            title: body.data.title,
-            userId: req.user?.sub ?? 1
-        });
+        // const new_task = await this.taskService.create({
+        //     title: body.data.title,
+        //     userId: req.user?.sub ?? 1
+        // });
 
-        return res.status(200).json({ data: new_task })
+        // return res.status(200).json({ data: new_task })
 
 
 

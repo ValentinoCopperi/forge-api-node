@@ -8,6 +8,7 @@ import {
   getPrismaClient,
   initPrisma,
 } from "./shared/libs/prisma/prisma.connection";
+import { createOrganizationModule } from "./organizations/module";
 import { createTaskModule } from "./tasks/module";
 import express from "express";
 import { createAuthModule } from "./auth/module";
@@ -16,12 +17,14 @@ import {
   initRedis,
 } from "./shared/libs/redis/redis.connection";
 import { ErrorRequestHandler } from "./shared/middleware/error-request-handler";
-import { tokenMiddleware } from "./auth/middlewares/auth.middleware";
+import { rateLimitMiddleware, tokenMiddleware } from "./auth/middlewares/auth.middleware";
 import { envs } from "./shared/configs/env.config";
 import { LoggerMiddleware } from "./shared/middleware/logger.middleware";
 import { logger } from "./shared/libs/logger/logger";
 import { RequestIdMiddleware } from "./shared/middleware/request-id.middleware";
 import { HealthRoutes } from "./health/routes/health.routes";
+import swaggerUi from "swagger-ui-express";
+import { buildOrganizationsOpenApiDocument } from "./shared/docs/openapi-organizations.docs";
 
 const API_PREFIX = `/api/v1`;
 
@@ -29,6 +32,16 @@ function boostrap() {
   const app = application();
 
   app.use(express.json());
+
+  const organizationsOpenApi = buildOrganizationsOpenApiDocument();
+
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(organizationsOpenApi, {
+    swaggerOptions: { persistAuthorization: true },
+    customSiteTitle: "Organizations API docs",
+  }));
+  app.get("/docs/openapi.json", (_req, res) => {
+    res.json(organizationsOpenApi);
+  });
 
   //Middleware para requests ids global
   app.use(RequestIdMiddleware);
@@ -48,13 +61,18 @@ function boostrap() {
   const healthRouter = new HealthRoutes(prisma, getRedisClient());
 
   app.use(`${API_PREFIX}/health`, healthRouter.getRouter());
-  app.use("/api/tasks", tokenMiddleware, createTaskModule(prisma));
+  app.use(`${API_PREFIX}/tasks`, tokenMiddleware, createTaskModule(prisma));
   app.use(
-    "/api/notifications",
+    `${API_PREFIX}/organizations`,
+    tokenMiddleware,
+    createOrganizationModule(prisma),
+  );
+  app.use(
+    `${API_PREFIX}/notifications`,
     tokenMiddleware,
     notificationsRouter.getRouter(),
   );
-  app.use("/api/auth", createAuthModule(prisma));
+  app.use(`${API_PREFIX}/auth`, rateLimitMiddleware, createAuthModule(prisma));
 
   app.get("/client", (req, res) => {
     res.sendFile(path.join(__dirname, "..", "client.html"));

@@ -23,7 +23,7 @@ export class AuthRoutes {
       this.authController.refreshToken(req, res),
     );
 
-    this.router.post(`/signin`, rateLimitMiddleware, (req, res) =>
+    this.router.post(`/signin`, (req, res) =>
       this.authController.login(req, res),
     );
 
