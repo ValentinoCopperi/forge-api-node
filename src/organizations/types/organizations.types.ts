@@ -8,6 +8,8 @@ export const organizationCreateSelect = Prisma.validator<Prisma.OrganizationSele
     id: true,
     name: true,
     description: true,
+    createdAt: true,
+    createdByUserId: true,
     updatedAt: true,
 })
 
@@ -23,11 +25,12 @@ export const organizationsGetAllSelect = Prisma.validator<Prisma.OrganizationSel
     id: true,
     name: true,
     description: true,
+    createdAt: true,
     updatedAt: true,
 
     _count : {
-        select : { organizationUsers : true , projects : true }
-    }
+        select : { organizationUsers : true , projects : true },
+    },
 })
 
 
@@ -46,8 +49,18 @@ export const organizationFindOneSelect = Prisma.validator<Prisma.OrganizationSel
     id: true,
     name: true,
     description: true,
+    createdAt: true,
+    createdByUser : {
+        select : {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+        }
+    },
     updatedAt: true,
     projects : {
+        where: { deletedAt: null },
         select : {
             id: true,
             name: true,

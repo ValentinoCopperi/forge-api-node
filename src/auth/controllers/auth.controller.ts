@@ -18,11 +18,13 @@ export class AuthController {
   }
 
   async register(req: Request, res: Response) {
-    const body = registerSchema.safeParse(req.body);
+    const body = registerSchema.safeParse(req.body ?? {});
 
     if (!body.success) {
+      const { fieldErrors, formErrors } = body.error.flatten();
       return res.status(400).json({
-        errors: body.error.flatten().fieldErrors,
+        errors: fieldErrors,
+        ...(formErrors.length > 0 ? { formErrors } : {}),
       });
     }
 
@@ -34,11 +36,13 @@ export class AuthController {
   }
 
   async login(req: Request, res: Response) {
-    const body = loginSchema.safeParse(req.body);
+    const body = loginSchema.safeParse(req.body ?? {});
 
     if (!body.success) {
+      const { fieldErrors, formErrors } = body.error.flatten();
       return res.status(400).json({
-        errors: body.error.flatten().fieldErrors,
+        errors: fieldErrors,
+        ...(formErrors.length > 0 ? { formErrors } : {}),
       });
     }
 

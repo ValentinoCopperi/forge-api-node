@@ -26,7 +26,10 @@ export class TaskRepository implements I_TaskRepository {
 
 
     async count(): Promise<number> {
-        return await this.prisma.task.count();
+
+        return await this.prisma.task.count({
+            where: { deletedAt: null },
+        });
     }
 
 
@@ -37,10 +40,11 @@ export class TaskRepository implements I_TaskRepository {
 
         const offset = (page - 1) * limit
 
-         return this.prisma.task.findMany({
-            skip : offset,
+        return this.prisma.task.findMany({
+            skip: offset,
             take: limit,
-            select: { ...taskWithUserSelect }
+            where: { deletedAt: null },
+            select: { ...taskWithUserSelect },
         })
 
 
@@ -53,17 +57,20 @@ export class TaskRepository implements I_TaskRepository {
 
         return this.prisma.task.findMany({
             where: {
-                id: { gt: cursor || 0 }
+                deletedAt: null,
+                id: { gt: cursor || 0 },
             },
             take: limit || 10,
-            select: { ...taskWithUserSelect }
+            select: { ...taskWithUserSelect },
         })
 
     }
 
     findAll(): Promise<TaskWithUser[]> {
+
         return this.prisma.task.findMany({
-            select: { ...taskWithUserSelect }
+            where: { deletedAt: null },
+            select: { ...taskWithUserSelect },
         });
     }
 
@@ -84,10 +91,11 @@ export class TaskRepository implements I_TaskRepository {
 
         const task = await this.prisma.task.findFirst({
             where: {
+                deletedAt: null,
                 title: {
-                    equals: title
-                }
-            }
+                    equals: title,
+                },
+            },
         });
 
         return !!task;

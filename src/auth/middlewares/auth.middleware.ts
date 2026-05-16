@@ -5,6 +5,7 @@ import { Role } from '@prisma/client';
 import multer from 'multer'
 import { getRedisClient } from '../../shared/libs/redis/redis.connection';
 import { envs } from '../../shared/configs/env.config';
+import { AppError } from '../../shared/errors/AppError';
 
 
 
@@ -14,7 +15,7 @@ export const tokenMiddleware = (req: Request, res: Response, next: NextFunction)
     const authHeader = req.headers['authorization']
     const token = authHeader?.split(' ')[1]
 
-    if (!token) return res.status(401).json({ message: 'Unauthorized' })
+    if (!token) throw new AppError("Unauthorized - Token not found", 401);
 
 
     try {
@@ -22,7 +23,7 @@ export const tokenMiddleware = (req: Request, res: Response, next: NextFunction)
         req.user = payload
         next()
     } catch {
-        return res.status(401).json({ message: 'Unauthorized' })
+        throw new AppError("Unauthorized - Invalid token", 401);
     }
 
 }
@@ -30,13 +31,14 @@ export const tokenMiddleware = (req: Request, res: Response, next: NextFunction)
 export const roleMiddleware = (roles: Role[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
 
-        if (!req.user) return res.status(401).json({ message: 'Unauthorized' })
+
+        if (!req.user) throw new AppError("Unauthorized - User not found", 401);
 
         const roles_request = req.user.roles;
 
         const hasRole = roles.some(r => roles_request.includes(r))
 
-        if (!hasRole) return res.status(403).json({ message: `Forbidden. ${roles.map(r => r + " ")} are the only ones allowed` })
+        if (!hasRole) throw new AppError(`Forbidden. ${roles.map(r => r + " ")} are the only ones allowed`, 403);
 
         next();
 
@@ -67,7 +69,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
 
         } else {
 
-            return res.status(429).json({ message: `Too many requests` })
+            throw new AppError("Too many requests", 429);
 
         }
 

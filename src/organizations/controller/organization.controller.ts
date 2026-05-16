@@ -1,5 +1,6 @@
 import { OrganizationService } from "../service/organization.service";
 import { Request, Response } from "express";
+import { AppError } from "../../shared/errors/AppError";
 import {
     createOrganizationDto,
     addUserToOrganizationDto,
@@ -29,7 +30,12 @@ export class OrganizationController {
             });
         }
 
-        const data = await this.organizationService.create(parsed.data);
+        const creatorId = req.user?.sub;
+        if (creatorId === undefined) {
+            throw new AppError("Unauthorized", 401);
+        }
+
+        const data = await this.organizationService.create(parsed.data, creatorId);
 
         return res.status(200).json({ data });
     }

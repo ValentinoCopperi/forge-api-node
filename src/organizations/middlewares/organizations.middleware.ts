@@ -106,7 +106,7 @@ export function createRequireOrganizationPermission(
 
             if (userId === undefined) {
 
-                return next(new AppError("Unauthorized", 401));
+                return next(new AppError("Unauthorized - User not found", 401));
             }
 
             const organizationId = options.resolveOrganizationId(req);
@@ -116,16 +116,21 @@ export function createRequireOrganizationPermission(
                 return next(new AppError("Invalid or missing organization id", 400));
             }
 
+            if (!(await organizationRepository.existsById(organizationId))) {
+
+                return next(new AppError(`Organization with id ${organizationId} not found`, 404));
+            }
+
             const role = await organizationRepository.findMembershipRole(organizationId, userId);
 
             if (role === null) {
 
-                return next(new AppError("Forbidden", 403));
+                return next(new AppError("Forbidden - user is not a member of the organization", 403));
             }
 
             if (!organizationRoleAllowsAction(role, action)) {
 
-                return next(new AppError("Forbidden", 403));
+                return next(new AppError("Forbidden - Role does not allow action", 403));
             }
 
             req.organizationMembership = {

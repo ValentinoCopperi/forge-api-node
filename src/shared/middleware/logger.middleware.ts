@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { getHttpRequestLogContext } from "../helpers/http-log-context";
 import { logger } from "../libs/logger/logger";
 
 export const LoggerMiddleware = (
@@ -13,9 +14,7 @@ export const LoggerMiddleware = (
 
     if (res.statusCode === 200 || res.statusCode === 201) {
       logger.info({
-        request_id: req.request_id,
-        method: req.method,
-        url: req.url,
+        ...getHttpRequestLogContext(req),
         statusCode: res.statusCode,
         duration,
       });

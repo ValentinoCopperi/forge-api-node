@@ -9,7 +9,7 @@ import { AppError } from "../../shared/errors/AppError";
 
 
 interface I_OrganizationService {
-    create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse>
+    create(createOrganization: CreateOrganizationDto, userId: number): Promise<OrganizationCreateResponse>
     findAll(): Promise<OrganizationsGetAll[]>
     findOne(id: number): Promise<OrganizationFindOneResponse>
     addUserToOrganization(data: AddUserToOrganizationDto): Promise<void>
@@ -24,8 +24,8 @@ export class OrganizationService implements I_OrganizationService {
     constructor(private readonly organizationRepository: OrganizationRepository) { }
 
 
-    async create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse> {
-        return this.organizationRepository.create(data);
+    async create(data: CreateOrganizationDto, userId: number): Promise<OrganizationCreateResponse> {
+        return this.organizationRepository.create(data, userId);
     }
 
     async findAll(): Promise<OrganizationsGetAll[]> {

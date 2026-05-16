@@ -92,7 +92,7 @@ export class AuthService implements I_AuthService {
     };
 
     const accessToken = jwt.sign(payload, envs.JWT_SECRET, {
-      expiresIn: "10s",
+      expiresIn: "45m",
     });
     const refreshToken = jwt.sign(payload, envs.JWT_REFRESH_SECRET, {
       expiresIn: "7d",

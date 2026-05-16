@@ -41,18 +41,24 @@ enum TaskStatus {
 }
 
 model User {
-  id                Int                @id @default(autoincrement())
-  name              String
-  email             String             @unique
-  passwordHash      String
-  avatarUrl         String?
-  userRoles         UserRole[]
-  sessions          Session[]
-  tasksDesignatedTo Task[]             @relation("DesignatedTo")
-  tasksDesignatedBy Task[]             @relation("DesignatedBy")
-  projects          Project[]
-  organizationUsers OrganizationUser[]
-  taskComments      TaskComment[]
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  passwordHash String
+  avatarUrl String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  userRoles            UserRole[]
+  sessions             Session[]
+  tasksDesignatedTo    Task[]             @relation("DesignatedTo")
+  tasksDesignatedBy    Task[]             @relation("DesignatedBy")
+  managedProjects      Project[]          @relation("ProjectManager")
+  projectsCreated      Project[]          @relation("ProjectCreator")
+  organizationUsers    OrganizationUser[]
+  organizationsCreated Organization[]     @relation("OrganizationCreator")
+  organizationsUpdated Organization[]     @relation("OrganizationUpdater")
+  taskComments         TaskComment[]
 }
 
 model Task {
@@ -64,18 +70,24 @@ model Task {
   category         TaskCategory  @default(OTRO)
   designatedTo     Int?
   designatedBy     Int?
-  designatedToUser User?          @relation("DesignatedTo", fields: [designatedTo], references: [id])
-  designatedByUser User?            @relation("DesignatedBy", fields: [designatedBy], references: [id])
+  designatedToUser User?         @relation("DesignatedTo", fields: [designatedTo], references: [id])
+  designatedByUser User?         @relation("DesignatedBy", fields: [designatedBy], references: [id])
   project          Project?      @relation(fields: [projectId], references: [id])
   projectId        Int?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @default(now()) @updatedAt
   deadline         DateTime?
-  taskComments     TaskComment[]
+
+  /// Soft delete; las queries de negocio deben filtrar deletedAt: null
+  deletedAt        DateTime?
+
+  taskComments TaskComment[]
 
   @@index([designatedTo])
   @@index([designatedBy])
   @@index([projectId])
+  @@index([deletedAt])
+  @@index([status])
 }
 
 model Session {
@@ -85,6 +97,7 @@ model Session {
   expiresAt DateTime
   revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -96,26 +109,49 @@ model UserRole {
   role   Role
   user   User @relation(fields: [userId], references: [id])
 
+  /// Cuándo se otorgó este rol de aplicación
+  assignedAt DateTime @default(now())
+
   @@id([userId, role])
 }
 
 model Organization {
-  id          Int       @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   description String?
-  updatedAt   DateTime  @default(now()) @updatedAt
-  projects    Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  createdByUserId Int
+  createdByUser   User @relation("OrganizationCreator", fields: [createdByUserId], references: [id])
+
+  updatedByUserId Int?
+  updatedByUser   User? @relation("OrganizationUpdater", fields: [updatedByUserId], references: [id])
+
+  deletedAt DateTime?
+
+  projects Project[]
 
   organizationUsers OrganizationUser[]
+
+  @@index([createdByUserId])
+  @@index([updatedByUserId])
+  @@index([deletedAt])
 }
 
 model OrganizationUser {
-  id             Int          @id @default(autoincrement())
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  userId         Int
-  user           User         @relation(fields: [userId], references: [id])
-  role           OrganizationUserRole @default(MEMBER)  
+  id               Int              @id @default(autoincrement())
+  organizationId   Int
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  userId           Int
+  user             User             @relation(fields: [userId], references: [id])
+  role             OrganizationUserRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
 }
@@ -128,12 +164,22 @@ model Project {
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
-  tasks          Task[]
-  managerId      Int
-  manager        User         @relation(fields: [managerId], references: [id])
+
+  managerId Int
+  manager   User @relation("ProjectManager", fields: [managerId], references: [id])
+
+  createdByUserId Int?
+  createdByUser   User? @relation("ProjectCreator", fields: [createdByUserId], references: [id])
+
+  deletedAt DateTime?
+
+  tasks Task[]
 
   @@index([organizationId])
   @@index([createdAt])
+  @@index([managerId])
+  @@index([createdByUserId])
+  @@index([deletedAt])
 }
 
 model TaskComment {
@@ -146,6 +192,9 @@ model TaskComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  deletedAt DateTime?
+
   @@index([taskId])
   @@index([userId])
+  @@index([deletedAt])
 }

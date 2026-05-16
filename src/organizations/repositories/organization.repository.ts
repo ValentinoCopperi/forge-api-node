@@ -1,10 +1,11 @@
 import { OrganizationUserRole, PrismaClient } from "@prisma/client";
 import { AddUserToOrganizationDto, CreateOrganizationDto } from "../dtos/organizations.dto";
 import { OrganizationCreateResponse, organizationCreateSelect, OrganizationFindOneResponse, organizationFindOneSelect, OrganizationsGetAll, organizationsGetAllSelect } from "../types/organizations.types";
+import { logger } from "../../shared/libs/logger/logger";
 
 
 interface I_OrganizationRepository {
-    create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse>
+    create(data: CreateOrganizationDto, ownerUserId: number): Promise<OrganizationCreateResponse>
     findAll(): Promise<OrganizationsGetAll[]>
     findById(id: number): Promise<OrganizationFindOneResponse | null>
     existsById(id: number): Promise<boolean>
@@ -17,6 +18,10 @@ interface I_OrganizationRepository {
 }
 
 export class OrganizationRepository implements I_OrganizationRepository {
+
+    private readonly logger = logger.child({
+        repository: "OrganizationRepository",
+    });
 
 
     constructor(private readonly prisma: PrismaClient) { }
@@ -71,24 +76,27 @@ export class OrganizationRepository implements I_OrganizationRepository {
             select: { role: true },
         });
 
+        this.logger.info({ organizationId, userId, row }, "findMembershipRole");
+
         return row?.role ?? null;
     }
 
 
     async existsById(id: number): Promise<boolean> {
 
-        const organization = await this.prisma.organization.findUnique({
-            where: { id },
+        const organization = await this.prisma.organization.findFirst({
+            where: { id, deletedAt: null },
             select: { id: true },
         })
+
         return !!organization;
     }
 
 
     async findById(id: number): Promise<OrganizationFindOneResponse | null> {
 
-        return this.prisma.organization.findUnique({
-            where: { id },
+        return this.prisma.organization.findFirst({
+            where: { id, deletedAt: null },
             select: { ...organizationFindOneSelect }
         })
 
@@ -98,17 +106,35 @@ export class OrganizationRepository implements I_OrganizationRepository {
     async findAll(): Promise<OrganizationsGetAll[]> {
 
         return this.prisma.organization.findMany({
+            where: { deletedAt: null },
             select: { ...organizationsGetAllSelect }
         })
     }
 
 
-    async create(data: CreateOrganizationDto): Promise<OrganizationCreateResponse> {
+    async create(data: CreateOrganizationDto, ownerUserId: number): Promise<OrganizationCreateResponse> {
 
-        return this.prisma.organization.create({
-            data,
-            select: { ...organizationCreateSelect }
-        })
+        return this.prisma.$transaction(async (tx) => {
+
+            const organization = await tx.organization.create({
+                data: {
+                    ...data,
+                    createdByUserId: ownerUserId,
+                },
+                select: { ...organizationCreateSelect }
+            });
+
+            await tx.organizationUser.create({
+                data: {
+                    organizationId: organization.id,
+                    userId: ownerUserId,
+                    role: OrganizationUserRole.OWNER,
+                },
+            });
+
+            return organization;
+        });
+
     }
 
 }
