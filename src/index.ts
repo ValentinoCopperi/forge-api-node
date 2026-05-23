@@ -9,6 +9,7 @@ import {
   initPrisma,
 } from "./shared/libs/prisma/prisma.connection";
 import { createOrganizationModule } from "./organizations/module";
+import { createProjectsModule } from "./projects/module";
 import { createTaskModule } from "./tasks/module";
 import express from "express";
 import { createAuthModule } from "./auth/module";
@@ -24,7 +25,7 @@ import { logger } from "./shared/libs/logger/logger";
 import { RequestIdMiddleware } from "./shared/middleware/request-id.middleware";
 import { HealthRoutes } from "./health/routes/health.routes";
 import swaggerUi from "swagger-ui-express";
-import { buildOrganizationsOpenApiDocument } from "./shared/docs/openapi-organizations.docs";
+import { buildOpenApiDocument } from "./shared/docs/openapi.docs";
 
 const API_PREFIX = `/api/v1`;
 
@@ -33,14 +34,14 @@ function boostrap() {
 
   app.use(express.json());
 
-  const organizationsOpenApi = buildOrganizationsOpenApiDocument();
+  const openApiDocument = buildOpenApiDocument();
 
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(organizationsOpenApi, {
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument, {
     swaggerOptions: { persistAuthorization: true },
-    customSiteTitle: "Organizations API docs",
+    customSiteTitle: "Maproute API docs",
   }));
   app.get("/docs/openapi.json", (_req, res) => {
-    res.json(organizationsOpenApi);
+    res.json(openApiDocument);
   });
 
   //Middleware para requests ids global
@@ -60,12 +61,17 @@ function boostrap() {
   const notificationsRouter = new NotificationsRoutes(io);
   const healthRouter = new HealthRoutes(prisma, getRedisClient());
 
-  app.use(`${API_PREFIX}/health`, healthRouter.getRouter());
+  app.use(`${API_PREFIX}/health`,rateLimitMiddleware, healthRouter.getRouter());
   app.use(`${API_PREFIX}/tasks`, tokenMiddleware, createTaskModule(prisma));
   app.use(
     `${API_PREFIX}/organizations`,
     tokenMiddleware,
     createOrganizationModule(prisma),
+  );
+  app.use(
+    `${API_PREFIX}/organizations`,
+    tokenMiddleware,
+    createProjectsModule(prisma),
   );
   app.use(
     `${API_PREFIX}/notifications`,

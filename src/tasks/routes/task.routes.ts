@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { TaskController } from '../controllers/tasks.controller';
-import { roleMiddleware, tokenMiddleware } from '../../auth/middlewares/auth.middleware';
-import { Role } from '@prisma/client';
+
 
 export class TaskRoutes {
 
@@ -16,13 +15,21 @@ export class TaskRoutes {
 
     private initRoutes() {
 
-        this.router.get('/', (req, res) => this.taskController.findAll(req, res))
+        
+
+        this.router.get('/project/:projectId', (req, res) => this.taskController.findAllByProjectId(req, res))
+
+        this.router.get('/:id', (req, res) => this.taskController.findById(req, res))
+
+        this.router.post('/:projectId/comments', (req, res) => this.taskController.addTaskComment(req, res))
+
+        this.router.post('/:projectId', (req, res) => this.taskController.create(req, res))
+
 
         this.router.get('/cursorPaginated' , (req, res) => this.taskController.findAllCursorPaginated(req, res))
 
         this.router.get('/offsetPaginated' , (req, res) => this.taskController.findAllOffsetPaginated(req, res))
 
-        this.router.post('/', roleMiddleware([Role.DIRECTOR]), (req, res) => this.taskController.create(req, res));
 
         this.router.get('/fast', (req, res) => {
             res.json({ message: "pong", timestamp: Date.now() })

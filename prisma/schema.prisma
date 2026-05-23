@@ -40,6 +40,16 @@ enum TaskStatus {
   DONE
 }
 
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  DELETED
+  PAUSED
+  CANCELLED
+  COMPLETED
+}
+
 model User {
   id        Int       @id @default(autoincrement())
   name      String
@@ -53,6 +63,7 @@ model User {
   sessions             Session[]
   tasksDesignatedTo    Task[]             @relation("DesignatedTo")
   tasksDesignatedBy    Task[]             @relation("DesignatedBy")
+  tasksCreated         Task[]             @relation("CreatedBy")
   managedProjects      Project[]          @relation("ProjectManager")
   projectsCreated      Project[]          @relation("ProjectCreator")
   organizationUsers    OrganizationUser[]
@@ -61,34 +72,6 @@ model User {
   taskComments         TaskComment[]
 }
 
-model Task {
-  id               Int           @id @default(autoincrement())
-  title            String
-  description      String?
-  status           TaskStatus    @default(PENDING)
-  priority         TaskPriority  @default(MEDIUM)
-  category         TaskCategory  @default(OTRO)
-  designatedTo     Int?
-  designatedBy     Int?
-  designatedToUser User?         @relation("DesignatedTo", fields: [designatedTo], references: [id])
-  designatedByUser User?         @relation("DesignatedBy", fields: [designatedBy], references: [id])
-  project          Project?      @relation(fields: [projectId], references: [id])
-  projectId        Int?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @default(now()) @updatedAt
-  deadline         DateTime?
-
-  /// Soft delete; las queries de negocio deben filtrar deletedAt: null
-  deletedAt        DateTime?
-
-  taskComments TaskComment[]
-
-  @@index([designatedTo])
-  @@index([designatedBy])
-  @@index([projectId])
-  @@index([deletedAt])
-  @@index([status])
-}
 
 model Session {
   id        Int      @id @default(autoincrement())
@@ -165,6 +148,9 @@ model Project {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
 
+  status ProjectStatus @default(ACTIVE)
+
+
   managerId Int
   manager   User @relation("ProjectManager", fields: [managerId], references: [id])
 
@@ -181,6 +167,38 @@ model Project {
   @@index([createdByUserId])
   @@index([deletedAt])
 }
+
+model Task {
+  id               Int           @id @default(autoincrement())
+  title            String
+  description      String?
+  status           TaskStatus    @default(PENDING)
+  priority         TaskPriority  @default(MEDIUM)
+  category         TaskCategory  @default(OTRO)
+  designatedTo     Int?
+  designatedBy     Int?
+  createdBy        Int
+  createdByUser    User          @relation("CreatedBy", fields: [createdBy], references: [id])
+  designatedToUser User?         @relation("DesignatedTo", fields: [designatedTo], references: [id])
+  designatedByUser User?         @relation("DesignatedBy", fields: [designatedBy], references: [id])
+  project          Project?      @relation(fields: [projectId], references: [id])
+  projectId        Int?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+  deadline         DateTime?
+
+  /// Soft delete; las queries de negocio deben filtrar deletedAt: null
+  deletedAt        DateTime?
+
+  taskComments TaskComment[]
+
+  @@index([designatedTo])
+  @@index([designatedBy])
+  @@index([projectId])
+  @@index([deletedAt])
+  @@index([status])
+}
+
 
 model TaskComment {
   id        Int      @id @default(autoincrement())

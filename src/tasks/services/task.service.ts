@@ -1,8 +1,10 @@
-import { Task } from "@prisma/client";
+import { AddTaskCommentDto, createTaskDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 import { TaskRepository } from "../repositories/tasks.repository";
-import { AppError } from '../../shared/errors/AppError';
-import { TaskWithUser } from "../types/tasks.types";
+import { TaskWithProject, TaskWithUser } from "../types/tasks.types";
 import Redis from "ioredis";
+import { ProjectsRepository } from "../../projects/repositories/projects.repository";
+import { AppError } from "../../shared/errors/AppError";
+import { OrganizationRepository } from "../../organizations/repositories/organization.repository";
 
 
 interface I_TaskService {
@@ -21,9 +23,15 @@ interface I_TaskService {
         nextCursor: number | null
     }
     >
-    findAll(): Promise<TaskWithUser[]>
 
-    // create(data: { title: string, userId: number }): Promise<Task>
+    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject>
+
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject>
+
+    findById(id: number): Promise<TaskWithProject | null>
+
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]>
+
 
 }
 
@@ -32,8 +40,48 @@ export class TaskService implements I_TaskService {
 
     constructor(
         private readonly taskRepository: TaskRepository,
-        private readonly redisClient: Redis
+        private readonly redisClient: Redis,
+        private readonly projectsRepository: ProjectsRepository,
+        private readonly organizationRepository: OrganizationRepository
     ) { }
+
+
+
+    async create(data: { createTaskDto: CreateTaskDto; createdByUserId: number; }): Promise<TaskWithProject> {
+
+
+        const project = await this.projectsRepository.findById(data.createTaskDto.projectId);
+
+        if (!project) {
+            throw new AppError(`project with id ${data.createTaskDto.projectId} not found`, 404);
+        }
+
+        if ( data.createTaskDto.deadline && data.createTaskDto.deadline < new Date() ) {
+            throw new AppError(`deadline must be in the future`, 400);
+        }
+
+        if( !await this.organizationRepository.userMembershipExists(project.organizationId, data.createdByUserId) ) {
+            throw new AppError(`user with id ${data.createdByUserId} is not a member of organization with id ${project.organizationId}`, 403);
+        }
+
+
+        const task = await this.taskRepository.create(data);
+
+        return task;
+    }
+
+
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto; userId: number; taskId: number; }): Promise<TaskWithProject> {
+        return this.taskRepository.addTaskComment(data);
+    }
+
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]> {
+        return this.taskRepository.findAllByProjectId(data);
+    }
+
+    findById(id: number): Promise<TaskWithProject | null> {
+        return this.taskRepository.findById(id);
+    }
 
 
     /*
@@ -87,7 +135,8 @@ export class TaskService implements I_TaskService {
         Para la siguiente llamada, pasas ese nextCursor y te trae las siguientes 5 tareas desde ese punto.
 
         ✅ Ventaja: Rápido sin importar el volumen — siempre usa índice
-        ❌ Desventaja: No podés saltar a una página específica
+        ❌ Desventaja: No podésimport { getAllTasksByProjectIdFiltersDto } from './../dtos/tasks.dto';
+ saltar a una página específica
     */
     async findAllCursorPaginated(data: { cursor?: number; limit?: number; }): Promise<{
         data: TaskWithUser[],
@@ -105,41 +154,6 @@ export class TaskService implements I_TaskService {
 
     }
 
-
-
-    async findAll(): Promise<TaskWithUser[]> {
-
-        const redisResult = await this.redisClient.get('tasks');
-
-        if (!redisResult) {
-
-            const tasks = await this.taskRepository.findAll();
-
-            await this.redisClient.set("tasks", JSON.stringify(tasks));
-
-            return tasks;
-        }
-
-        return JSON.parse(redisResult)
-    }
-
-
-    // async create(data: { title: string; userId: number; }): Promise<Task> {
-
-    //     const { title, userId } = data;
-
-    //     if (isNaN(userId)) throw new AppError("UserId must be a number", 400);
-
-    //     if (!title || !userId) throw new AppError("Title and userId are required", 400);
-
-    //     if (await this.taskRepository.findByTitle(title)) throw new AppError(`Title : ${title} , cannot be used`, 404)
-
-    //     const new_task = await this.taskRepository.create(data);
-
-    //     await this.redisClient.del('tasks');
-
-    //     return new_task;
-    // }
 
 
 

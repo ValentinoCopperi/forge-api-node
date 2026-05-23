@@ -1,42 +1,92 @@
-import { PrismaClient, Task } from "@prisma/client";
-import { TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
+import { Prisma, PrismaClient, TaskComment } from "@prisma/client";
+import { TaskWithProject, taskWithProjectSelect, TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
+import { AddTaskCommentDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 
 
 
 interface I_TaskRepository {
-    
-    count() : Promise<number>
-    
+    count(): Promise<number>
+
     findAllOffsetPaginated(data: { page: number, limit: number }): Promise<TaskWithUser[]>
 
     findAllCursorPaginated(data: { cursor?: number, limit?: number }): Promise<TaskWithUser[]>
 
-    findAll(): Promise<TaskWithUser[]>
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]>
 
-    // create(data: { title: string, userId: number }): Promise<Task>
+    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject>
 
-    findByTitle(title: string): Promise<boolean>
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject>
 
-    
+    findById(id: number): Promise<TaskWithProject | null>
+
 }
 
 export class TaskRepository implements I_TaskRepository {
 
     constructor(private readonly prisma: PrismaClient) { }
 
-
     async count(): Promise<number> {
-
-        return await this.prisma.task.count({
+        return this.prisma.task.count({
             where: { deletedAt: null },
         });
     }
 
+    async create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject> {
+        return this.prisma.task.create({
+            data: {
+                ...data.createTaskDto,
+                createdBy: data.createdByUserId,
+            },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]> {
+
+        const where: Prisma.TaskWhereInput = {
+            projectId: data.projectId,
+            deletedAt: null,
+            status: data.filters.status,
+            priority: data.filters.priority,
+            category: data.filters.category,
+            title: data.filters.title ? { contains: data.filters.title, mode: 'insensitive' } : undefined,
+            createdByUser: { id: data.filters.createdByUser },
+            designatedByUser: { id: data.filters.designatedByUser },
+            designatedToUser: { id: data.filters.designatedTo },
+            deadline: data.filters.deadline ? { gte: data.filters.deadline } : undefined,
+        }
+
+        return this.prisma.task.findMany({
+            where,
+            select: taskWithProjectSelect,
+        })
+    }
+
+    async addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject> {
+
+        await this.prisma.taskComment.create({
+            data: {
+                ...data.addTaskCommentDto,
+                userId: data.userId,
+                taskId: data.taskId,
+            },
+        });
+
+        return (await this.findById(data.taskId))!;
+    }
+
+    async findById(id: number): Promise<TaskWithProject | null> {
+        return this.prisma.task.findFirst({
+            where: { id },
+            select: taskWithProjectSelect,
+        });
+    }
 
 
     findAllOffsetPaginated(data: { page: number; limit: number; }): Promise<TaskWithUser[]> {
 
-        const { page , limit } = data;
+        const { page, limit } = data;
 
         const offset = (page - 1) * limit
 
@@ -44,7 +94,7 @@ export class TaskRepository implements I_TaskRepository {
             skip: offset,
             take: limit,
             where: { deletedAt: null },
-            select: { ...taskWithUserSelect },
+            select: taskWithUserSelect,
         })
 
 
@@ -61,44 +111,11 @@ export class TaskRepository implements I_TaskRepository {
                 id: { gt: cursor || 0 },
             },
             take: limit || 10,
-            select: { ...taskWithUserSelect },
+            select: taskWithUserSelect,
         })
 
     }
 
-    findAll(): Promise<TaskWithUser[]> {
 
-        return this.prisma.task.findMany({
-            where: { deletedAt: null },
-            select: { ...taskWithUserSelect },
-        });
-    }
 
-    // create(data: { title: string; userId: number; }): Promise<Task> {
-
-    //     const { title, userId } = data;
-
-    //     return this.prisma.task.create({
-    //         data: {
-    //             title,
-    //             userId
-    //         }
-    //     })
-
-    // }
-
-    async findByTitle(title: string): Promise<boolean> {
-
-        const task = await this.prisma.task.findFirst({
-            where: {
-                deletedAt: null,
-                title: {
-                    equals: title,
-                },
-            },
-        });
-
-        return !!task;
-
-    }
 }

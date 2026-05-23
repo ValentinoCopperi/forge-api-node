@@ -15,20 +15,28 @@ interface I_OrganizationRepository {
     deleteOrganizationUser(organizationId: number, userId: number): Promise<void>
     addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
     removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void>
+    addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
 }
 
 export class OrganizationRepository implements I_OrganizationRepository {
 
-    private readonly logger = logger.child({
-        repository: "OrganizationRepository",
-    });
+   
 
 
     constructor(private readonly prisma: PrismaClient) { }
 
 
     addProjectToOrganization(data: { organizationId: number; projectId: number; }): Promise<void> {
-        throw new Error("Method not implemented.");
+        return this.prisma.$transaction(async (tx) => {
+            await tx.organization.update({
+                where: { id: data.organizationId },
+                data: {
+                    projects: {
+                        connect: { id: data.projectId },
+                    },
+                },
+            });
+        });
     }
 
 
@@ -76,7 +84,7 @@ export class OrganizationRepository implements I_OrganizationRepository {
             select: { role: true },
         });
 
-        this.logger.info({ organizationId, userId, row }, "findMembershipRole");
+        // this.logger.info({ organizationId, userId, row }, "findMembershipRole");
 
         return row?.role ?? null;
     }

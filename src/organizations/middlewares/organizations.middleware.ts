@@ -109,7 +109,9 @@ export function createRequireOrganizationPermission(
                 return next(new AppError("Unauthorized - User not found", 401));
             }
 
-            const organizationId = options.resolveOrganizationId(req);
+            const organizationId = options.resolveOrganizationId(req) ?? req.body.organizationId;
+
+            
 
             if (organizationId === undefined) {
 

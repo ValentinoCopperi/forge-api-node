@@ -29,13 +29,26 @@ export class OrganizationRoutes {
             { resolveOrganizationId: organizationIdFromParam('organizationId') },
         );
 
-        
+        const requiereDeleteUser = createRequireOrganizationPermission(
+            this.organizationRepository,
+            'remove-user',
+            { resolveOrganizationId: organizationIdFromParam('organizationId') }
+        );
+
+
         this.router.post(
             '/:organizationId/users',
             mergeBodyOrganizationIdFromParams('organizationId'),
             requireAddUser,
             (req, res) => this.organizationController.addUserToOrganization(req, res),
         );
+
+        this.router.delete(
+            '/:organizationId/users',
+            mergeBodyOrganizationIdFromParams('organizationId'),
+            requiereDeleteUser,
+            (req, res) => this.organizationController.removeUserFromOrganization(req, res),
+        )
 
         this.router.get('/', (req, res) => this.organizationController.findAll(req, res));
 

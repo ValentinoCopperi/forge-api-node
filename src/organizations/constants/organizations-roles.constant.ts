@@ -1,7 +1,7 @@
 import { OrganizationUserRole } from "@prisma/client";
 
 export type RoleActions =
-    'delete' | 'update' | 'add-user' | 'remove-user' | 'add-project' | 'remove-project';
+    'delete' | 'update' | 'add-user' | 'remove-user' | 'update-user-role' | 'add-project'  | 'remove-project';
 
 type OrganizationRolesDefinitions = Map<OrganizationUserRole, RoleActions[]>;
 
