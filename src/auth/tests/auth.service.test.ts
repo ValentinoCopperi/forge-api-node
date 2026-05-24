@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AppError } from "../../shared/errors/AppError";
+import { describe, it, expect, beforeEach } from "vitest";
 import { AuthService } from "../services/auth.service";
 import { AuthRepository } from "../repositories/auth.repository";
-import { getPrismaClient } from "../../shared/libs/prisma/prisma.connection";
 import { prisma_test } from "../../shared/libs/prisma/prisma-test.connection";
 
 const testRepository = new AuthRepository(prisma_test);

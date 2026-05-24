@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import {
-  rateLimitMiddleware,
   tokenMiddleware,
   uploadMiddleware,
 } from "../middlewares/auth.middleware";

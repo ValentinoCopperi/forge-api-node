@@ -11,7 +11,7 @@ export const ErrorRequestHandler = (
   err: unknown,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   const ctx = getHttpRequestLogContext(req);
   const stack = err instanceof Error ? err.stack : undefined;

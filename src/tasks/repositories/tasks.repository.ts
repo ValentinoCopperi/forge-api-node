@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, TaskComment, TaskStatus } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { TaskWithProject, taskWithProjectSelect, TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
 import { AddTaskCommentDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 

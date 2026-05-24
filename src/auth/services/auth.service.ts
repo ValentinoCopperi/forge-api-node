@@ -3,7 +3,6 @@ import { AuthRepository } from "../repositories/auth.repository";
 import { AppError } from "../../shared/errors/AppError";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { S3Client } from "@aws-sdk/client-s3";
 import { StorageService } from "../../shared/libs/storage/storage.service";
 import { envs } from "../../shared/configs/env.config";
 

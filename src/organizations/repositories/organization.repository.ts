@@ -1,7 +1,6 @@
 import { OrganizationUserRole, PrismaClient } from "@prisma/client";
 import { AddUserToOrganizationDto, CreateOrganizationDto } from "../dtos/organizations.dto";
 import { OrganizationCreateResponse, organizationCreateSelect, OrganizationFindOneResponse, organizationFindOneSelect, OrganizationsGetAll, organizationsGetAllSelect } from "../types/organizations.types";
-import { logger } from "../../shared/libs/logger/logger";
 
 
 interface I_OrganizationRepository {
@@ -40,7 +39,7 @@ export class OrganizationRepository implements I_OrganizationRepository {
     }
 
 
-    async removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void> {
+    async removeProjectFromOrganization(_data: { organizationId: number, projectId: number }): Promise<void> {
         throw new Error("Method not implemented.");
     }
 

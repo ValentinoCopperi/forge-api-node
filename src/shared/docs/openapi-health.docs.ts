@@ -1,5 +1,3 @@
-import { errorResponse } from "./openapi-common";
-
 export const healthOpenApiPaths = {
     "/health": {
         get: {

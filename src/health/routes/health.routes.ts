@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { AppError } from "../../shared/errors/AppError";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { DefaultArgs } from "@prisma/client/runtime/library";
 import Redis from "ioredis";
@@ -20,7 +19,7 @@ export class HealthRoutes {
   }
 
   initRoutes() {
-    this.router.get("/", async (req, res, next) => {
+    this.router.get("/", async (req, res, _next) => {
       const results = await Promise.allSettled([
         this.prisma.$queryRaw`SELECT 1`,
         this.redis.ping(),

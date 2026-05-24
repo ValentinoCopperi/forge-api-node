@@ -21,7 +21,6 @@ import { ErrorRequestHandler } from "./shared/middleware/error-request-handler";
 import { rateLimitMiddleware, tokenMiddleware } from "./auth/middlewares/auth.middleware";
 import { envs } from "./shared/configs/env.config";
 import { LoggerMiddleware } from "./shared/middleware/logger.middleware";
-import { logger } from "./shared/libs/logger/logger";
 import { RequestIdMiddleware } from "./shared/middleware/request-id.middleware";
 import { HealthRoutes } from "./health/routes/health.routes";
 import swaggerUi from "swagger-ui-express";

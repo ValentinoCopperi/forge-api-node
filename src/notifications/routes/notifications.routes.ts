@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { getSocket } from "../../shared/libs/sockets/socket";
 import { DefaultEventsMap, Server } from "socket.io";
 import { AppError } from "../../shared/errors/AppError";
 

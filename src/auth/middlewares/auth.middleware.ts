@@ -58,7 +58,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
 
     if (ip_requests_count) {
 
-        let parsed_ip_count = parseInt(ip_requests_count);
+        const parsed_ip_count = parseInt(ip_requests_count);
 
         if (parsed_ip_count < Number(MAX_IP_REQUEST)) {
 
