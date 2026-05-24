@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, TaskComment } from "@prisma/client";
+import { Prisma, PrismaClient, TaskComment, TaskStatus } from "@prisma/client";
 import { TaskWithProject, taskWithProjectSelect, TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
 import { AddTaskCommentDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 
@@ -19,11 +19,22 @@ interface I_TaskRepository {
 
     findById(id: number): Promise<TaskWithProject | null>
 
+    updateMany(data: { where: Prisma.TaskWhereInput, data: Prisma.TaskUpdateInput }): Promise<{count : number}>
+
 }
 
 export class TaskRepository implements I_TaskRepository {
 
     constructor(private readonly prisma: PrismaClient) { }
+
+
+    async updateMany(data: { where: Prisma.TaskWhereInput; data: Prisma.TaskUpdateInput; }): Promise<{count : number}> {
+        return this.prisma.task.updateMany({...data });
+    }
+
+
+
+
 
     async count(): Promise<number> {
         return this.prisma.task.count({

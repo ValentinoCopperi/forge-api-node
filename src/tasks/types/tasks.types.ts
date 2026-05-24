@@ -14,6 +14,7 @@ export const taskWithProjectSelect = Prisma.validator<Prisma.TaskSelect>()({
     category: true,
     createdAt: true,
     updatedAt: true,
+    deadline: true,
     createdByUser : {
         select: {
             id: true,
