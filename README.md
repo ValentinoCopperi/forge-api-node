@@ -1,4 +1,4 @@
-# claude-concepts-maproute-node — API REST
+# NODE TS API REST
 
 API en **Node.js + TypeScript + Express** con PostgreSQL (Prisma), Redis, Socket.IO y almacenamiento compatible S3 (MinIO).
 
