@@ -15,6 +15,9 @@ interface I_OrganizationRepository {
     addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
     removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void>
     addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
+    updateDescription(data: { organizationId: number, description: string }): Promise<OrganizationFindOneResponse>
+    updateName(data: { organizationId: number, name: string }): Promise<OrganizationFindOneResponse>
+    delete(id: number): Promise<void>
 }
 
 export class OrganizationRepository implements I_OrganizationRepository {
@@ -23,6 +26,28 @@ export class OrganizationRepository implements I_OrganizationRepository {
 
 
     constructor(private readonly prisma: PrismaClient) { }
+
+
+    async updateDescription(data: { organizationId: number; description: string; }): Promise<OrganizationFindOneResponse> {
+        return this.prisma.organization.update({
+            where: { id: data.organizationId },
+            data: { description: data.description },
+            select: { ...organizationFindOneSelect },
+        });
+    }
+    updateName(data: { organizationId: number; name: string; }): Promise<OrganizationFindOneResponse> {
+        return this.prisma.organization.update({
+            where: { id: data.organizationId },
+            data: { name: data.name },
+            select: { ...organizationFindOneSelect },
+        });
+    }
+
+    async delete(id: number): Promise<void> {
+        await this.prisma.organization.delete({
+            where: { id },
+        });
+    }
 
 
     addProjectToOrganization(data: { organizationId: number; projectId: number; }): Promise<void> {

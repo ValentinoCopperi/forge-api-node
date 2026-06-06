@@ -66,7 +66,7 @@ export const taskWithProjectSelect = Prisma.validator<Prisma.TaskSelect>()({
     }
 })
 
-export type TaskWithProject = Prisma.TaskGetPayload<{
+export type TaskResponse = Prisma.TaskGetPayload<{
     select: typeof taskWithProjectSelect
 }>
 

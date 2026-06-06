@@ -69,4 +69,12 @@ export class AuthController {
       accessToken,
     });
   }
+
+  async getUser(req: Request, res: Response) {
+    const userId = req.user!.sub;
+    const user = await this.authService.getUser(Number(userId));
+    return res.status(200).json({
+      data: user,
+    });
+  }
 }

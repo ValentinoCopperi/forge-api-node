@@ -1,16 +1,26 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProjectStatus } from "@prisma/client";
 import { CreateProjectDto } from "../dtos/projects.dto";
-import { ProjectCreateResponse, projectCreateSelect } from "../types/projects.types";
+import { projectCreateSelect, ProjectResponse } from "../types/projects.types";
 
 
 
 interface I_ProjectsRepository {
 
-    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectCreateResponse>
+    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectResponse>
 
     existsById(id: number): Promise<boolean>
 
-    findById(id: number): Promise<ProjectCreateResponse | null>
+    findById(id: number): Promise<ProjectResponse | null>
+
+    updateManager(data: { projectId: number, managerId: number }): Promise<ProjectResponse>
+
+    updateStatus(data: { projectId: number, status: ProjectStatus }): Promise<ProjectResponse>
+
+    updateDescription(data: { projectId: number, description: string }): Promise<ProjectResponse>
+
+    updateName(data: { projectId: number, name: string }): Promise<ProjectResponse>
+
+    delete(id: number): Promise<void>
 
 }
 
@@ -21,7 +31,51 @@ export class ProjectsRepository implements I_ProjectsRepository {
     constructor(private readonly prisma: PrismaClient) { }
 
 
-    async findById(id: number): Promise<ProjectCreateResponse | null> {
+
+
+    updateStatus(data: { projectId: number, status: ProjectStatus }): Promise<ProjectResponse> {
+        return this.prisma.project.update({
+            where: { id: data.projectId },
+            data: { status: data.status },
+            select: { ...projectCreateSelect },
+        });
+    }
+
+
+    updateDescription(data: { projectId: number, description: string }): Promise<ProjectResponse> {
+        return this.prisma.project.update({
+            where: { id: data.projectId },
+            data: { description: data.description },
+            select: { ...projectCreateSelect },
+        });
+    }
+
+    updateName(data: { projectId: number, name: string }): Promise<ProjectResponse> {
+        return this.prisma.project.update({
+            where: { id: data.projectId },
+            data: { name: data.name },
+            select: { ...projectCreateSelect },
+        });
+    }
+
+    async delete(id: number): Promise<void> {
+        await this.prisma.project.delete({
+            where: { id },
+        });
+    }
+
+
+
+    updateManager(data: { projectId: number; managerId: number; }): Promise<ProjectResponse> {
+        return this.prisma.project.update({
+            where: { id: data.projectId },
+            data: { managerId: data.managerId },
+            select: { ...projectCreateSelect },
+        });
+    }
+
+
+    async findById(id: number): Promise<ProjectResponse | null> {
         return this.prisma.project.findFirst({
             where: { id, deletedAt: null },
             select: { ...projectCreateSelect },
@@ -38,7 +92,7 @@ export class ProjectsRepository implements I_ProjectsRepository {
     }
 
 
-    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectCreateResponse> {
+    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectResponse> {
         return this.prisma.project.create({
             data: {
                 ...data.createProjectDto,

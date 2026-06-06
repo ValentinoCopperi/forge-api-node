@@ -14,7 +14,7 @@ export class TasksJob {
 
     async start() {
 
-        cron.schedule('* * * * *', () => {
+        cron.schedule('0 0 * * *', () => {
             this.validateTasksStatus().catch(error => {
                 this.logger.error(error);
             });

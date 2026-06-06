@@ -6,3 +6,7 @@ dist
 
 
 /src/generated/prisma
+
+
+.claude/
+/claude

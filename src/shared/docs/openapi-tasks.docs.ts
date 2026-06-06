@@ -155,11 +155,48 @@ const taskWithProjectListResponse = {
     "401": unauthorizedResponse,
 };
 
+const taskFilterQueryParameters = [
+    {
+        name: "category",
+        in: "query",
+        schema: {
+            type: "string",
+            enum: taskCategoryEnum,
+        },
+    },
+    {
+        name: "priority",
+        in: "query",
+        schema: {
+            type: "string",
+            enum: taskPriorityEnum,
+        },
+    },
+    {
+        name: "status",
+        in: "query",
+        schema: {
+            type: "string",
+            enum: taskStatusEnum,
+        },
+    },
+    { name: "title", in: "query", schema: { type: "string" } },
+    { name: "createdByUser", in: "query", schema: { type: "integer" } },
+    { name: "designatedByUser", in: "query", schema: { type: "integer" } },
+    { name: "designatedTo", in: "query", schema: { type: "integer" } },
+    {
+        name: "deadline",
+        in: "query",
+        schema: { type: "string", format: "date-time" },
+    },
+];
+
 export const tasksOpenApiPaths = {
-    "/tasks/{projectId}": {
+    "/tasks/project/{projectId}": {
         get: {
             tags: ["Tasks"],
             summary: "Listar tareas por proyecto",
+            description: "Filtros opcionales vía query string (todos opcionales).",
             operationId: "tasks_findAllByProjectId",
             parameters: [
                 {
@@ -168,12 +205,15 @@ export const tasksOpenApiPaths = {
                     required: true,
                     schema: { type: "integer" },
                 },
+                ...taskFilterQueryParameters,
             ],
             responses: {
                 ...taskWithProjectListResponse,
-                "400": errorResponse("projectId inválido o ausente"),
+                "400": errorResponse("projectId o filtros inválidos"),
             },
         },
+    },
+    "/tasks/{projectId}": {
         post: {
             tags: ["Tasks"],
             summary: "Crear tarea en un proyecto",
@@ -215,8 +255,6 @@ export const tasksOpenApiPaths = {
         get: {
             tags: ["Tasks"],
             summary: "Obtener tarea por id",
-            description:
-                "En Express comparte patrón con `GET /tasks/{projectId}`; conviene rutas más específicas (ej. `/tasks/project/:projectId`).",
             operationId: "tasks_findById",
             parameters: [
                 {

@@ -24,7 +24,7 @@ export function buildOpenApiDocument() {
             version: "1.0.0",
             description:
                 "API REST bajo `/api/v1`. La mayoría de rutas requieren `Authorization: Bearer <accessToken>`. " +
-                "Excepciones: `GET /health`, `POST /auth/create`, `POST /auth/signin`, `POST /auth/refresh`.",
+                "Excepciones sin JWT: `GET /health`, `POST /auth/create`, `POST /auth/signin`, `POST /auth/refresh`.",
         },
         servers: [{ url: baseUrl }],
         tags: [

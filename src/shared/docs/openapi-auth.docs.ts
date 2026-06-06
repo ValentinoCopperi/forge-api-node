@@ -136,6 +136,31 @@ export const authOpenApiPaths = {
             },
         },
     },
+    "/auth/me": {
+        get: {
+            tags: ["Auth"],
+            summary: "Obtener usuario autenticado",
+            description: "Requiere JWT. Devuelve el perfil del usuario asociado al token.",
+            operationId: "auth_getUser",
+            responses: {
+                "200": {
+                    description: "Usuario actual",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    data: ref("UserWithRole"),
+                                },
+                            },
+                        },
+                    },
+                },
+                "401": unauthorizedResponse,
+                "404": errorResponse("Usuario no encontrado"),
+            },
+        },
+    },
     "/auth/uploadAvatar": {
         post: {
             tags: ["Auth"],

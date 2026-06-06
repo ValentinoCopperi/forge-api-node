@@ -2,12 +2,12 @@ import { OrganizationRepository } from "../../organizations/repositories/organiz
 import { AppError } from "../../shared/errors/AppError";
 import { CreateProjectDto } from "../dtos/projects.dto";
 import { ProjectsRepository } from "../repositories/projects.repository";
-import { ProjectCreateResponse } from "../types/projects.types";
+import { ProjectResponse } from "../types/projects.types";
 
 
 
 interface I_ProjectsService {
-    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectCreateResponse>
+    create(data: { createProjectDto: CreateProjectDto, createdByUserId: number }): Promise<ProjectResponse>
 }
 
 export class ProjectsService implements I_ProjectsService {
@@ -16,7 +16,7 @@ export class ProjectsService implements I_ProjectsService {
 
 
 
-    async create(data: { createProjectDto: CreateProjectDto; createdByUserId: number; }): Promise<ProjectCreateResponse> {
+    async create(data: { createProjectDto: CreateProjectDto; createdByUserId: number; }): Promise<ProjectResponse> {
 
         if (!await this.organizationRepository.existsById(data.createProjectDto.organizationId)) {
             throw new AppError(`Organization with id ${data.createProjectDto.organizationId} not found`, 404);

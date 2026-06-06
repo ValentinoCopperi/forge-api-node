@@ -1,6 +1,6 @@
 import { AddTaskCommentDto, createTaskDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 import { TaskRepository } from "../repositories/tasks.repository";
-import { TaskWithProject, TaskWithUser } from "../types/tasks.types";
+import { TaskResponse, TaskWithUser } from "../types/tasks.types";
 import Redis from "ioredis";
 import { ProjectsRepository } from "../../projects/repositories/projects.repository";
 import { AppError } from "../../shared/errors/AppError";
@@ -24,13 +24,13 @@ interface I_TaskService {
     }
     >
 
-    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject>
+    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskResponse>
 
-    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject>
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskResponse>
 
-    findById(id: number): Promise<TaskWithProject | null>
+    findById(id: number): Promise<TaskResponse | null>
 
-    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]>
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskResponse[]>
 
 
 }
@@ -47,7 +47,7 @@ export class TaskService implements I_TaskService {
 
 
 
-    async create(data: { createTaskDto: CreateTaskDto; createdByUserId: number; }): Promise<TaskWithProject> {
+    async create(data: { createTaskDto: CreateTaskDto; createdByUserId: number; }): Promise<TaskResponse> {
 
 
         const project = await this.projectsRepository.findById(data.createTaskDto.projectId);
@@ -71,15 +71,15 @@ export class TaskService implements I_TaskService {
     }
 
 
-    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto; userId: number; taskId: number; }): Promise<TaskWithProject> {
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto; userId: number; taskId: number; }): Promise<TaskResponse> {
         return this.taskRepository.addTaskComment(data);
     }
 
-    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]> {
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskResponse[]> {
         return this.taskRepository.findAllByProjectId(data);
     }
 
-    findById(id: number): Promise<TaskWithProject | null> {
+    findById(id: number): Promise<TaskResponse | null> {
         return this.taskRepository.findById(id);
     }
 

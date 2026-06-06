@@ -34,7 +34,7 @@ export const projectCreateSelect = Prisma.validator<Prisma.ProjectSelect>()({
     },
 })
 
-export type ProjectCreateResponse = Prisma.ProjectGetPayload<{
+export type ProjectResponse = Prisma.ProjectGetPayload<{
     select : typeof projectCreateSelect
 }>
 

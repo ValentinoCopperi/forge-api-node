@@ -12,6 +12,7 @@ import { createOrganizationModule } from "./organizations/module";
 import { createProjectsModule } from "./projects/module";
 import { createTaskModule } from "./tasks/module";
 import express from "express";
+import cors from "cors";
 import { createAuthModule } from "./auth/module";
 import {
   getRedisClient,
@@ -32,16 +33,20 @@ function boostrap() {
   const app = application();
 
   app.use(express.json());
+  app.use(cors({
+    origin: envs.CLIENT_URL,
+    credentials: true,
+  }));
 
   const openApiDocument = buildOpenApiDocument();
 
+  app.get("/docs/openapi.json", (_req, res) => {
+    res.json(openApiDocument);
+  });
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument, {
     swaggerOptions: { persistAuthorization: true },
     customSiteTitle: "Maproute API docs",
   }));
-  app.get("/docs/openapi.json", (_req, res) => {
-    res.json(openApiDocument);
-  });
 
   //Middleware para requests ids global
   app.use(RequestIdMiddleware);
@@ -60,23 +65,29 @@ function boostrap() {
   const notificationsRouter = new NotificationsRoutes(io);
   const healthRouter = new HealthRoutes(prisma, getRedisClient());
 
-  app.use(`${API_PREFIX}/health`,rateLimitMiddleware, healthRouter.getRouter());
-  app.use(`${API_PREFIX}/tasks`, tokenMiddleware, createTaskModule(prisma));
-  app.use(
-    `${API_PREFIX}/organizations`,
+  app.use(`${API_PREFIX}/health`, rateLimitMiddleware, healthRouter.getRouter());
+
+  app.use(`${API_PREFIX}/tasks`,
+    tokenMiddleware,
+    rateLimitMiddleware,
+    createTaskModule(prisma),
+  );
+
+  app.use(`${API_PREFIX}/organizations`,
     tokenMiddleware,
     createOrganizationModule(prisma),
   );
-  app.use(
-    `${API_PREFIX}/organizations`,
+
+  app.use(`${API_PREFIX}/organizations`,
     tokenMiddleware,
     createProjectsModule(prisma),
   );
-  app.use(
-    `${API_PREFIX}/notifications`,
+
+  app.use(`${API_PREFIX}/notifications`,
     tokenMiddleware,
     notificationsRouter.getRouter(),
   );
+
   app.use(`${API_PREFIX}/auth`, rateLimitMiddleware, createAuthModule(prisma));
 
   app.get("/client", (req, res) => {

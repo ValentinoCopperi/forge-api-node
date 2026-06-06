@@ -21,6 +21,7 @@ interface I_AuthService {
     userId: number;
     file: Express.Multer.File;
   }): Promise<UserWithRole>;
+  getUser(userId: number): Promise<UserWithRole>;
 }
 
 export class AuthService implements I_AuthService {
@@ -116,5 +117,11 @@ export class AuthService implements I_AuthService {
     });
 
     return { accessToken: newAcessToken };
+  }
+
+  async getUser(userId: number): Promise<UserWithRole> {
+    const user = await this.authRepository.findById(userId);
+    if (!user) throw new AppError(`User with ID ${userId} not found`, 404);
+    return user;
   }
 }

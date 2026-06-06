@@ -1,5 +1,5 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-import { TaskWithProject, taskWithProjectSelect, TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
+import { Prisma, PrismaClient, TaskCategory, TaskPriority, TaskStatus } from "@prisma/client";
+import { TaskResponse, taskWithProjectSelect, TaskWithUser, taskWithUserSelect } from "../types/tasks.types";
 import { AddTaskCommentDto, CreateTaskDto, GetAllTasksByProjectIdFiltersDto } from "../dtos/tasks.dto";
 
 
@@ -11,15 +11,34 @@ interface I_TaskRepository {
 
     findAllCursorPaginated(data: { cursor?: number, limit?: number }): Promise<TaskWithUser[]>
 
-    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]>
+    findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskResponse[]>
 
-    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject>
+    create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskResponse>
 
-    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject>
+    addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskResponse>
 
-    findById(id: number): Promise<TaskWithProject | null>
+    deletedTaskComments(taskId: number): Promise<void>
 
-    updateMany(data: { where: Prisma.TaskWhereInput, data: Prisma.TaskUpdateInput }): Promise<{count : number}>
+    delete(id: number): Promise<void>
+
+    updateStatus(data: { taskId: number, status: TaskStatus }): Promise<TaskResponse>
+
+    updatePriority(data: { taskId: number, priority: TaskPriority }): Promise<TaskResponse>
+
+    updateCategory(data: { taskId: number, category: TaskCategory }): Promise<TaskResponse>
+
+    updateDescription(data: { taskId: number, description: string }): Promise<TaskResponse>
+
+    updateTitle(data: { taskId: number, title: string }): Promise<TaskResponse>
+
+    updateDeadline(data: { taskId: number, deadline: Date }): Promise<TaskResponse>
+
+    updateDesignatedTo(data: { taskId: number, designatedTo: number }): Promise<TaskResponse>
+
+    updateDesignatedBy(data: { taskId: number, designatedBy: number }): Promise<TaskResponse>
+    findById(id: number): Promise<TaskResponse | null>
+
+    updateMany(data: { where: Prisma.TaskWhereInput, data: Prisma.TaskUpdateInput }): Promise<{ count: number }>
 
 }
 
@@ -28,10 +47,91 @@ export class TaskRepository implements I_TaskRepository {
     constructor(private readonly prisma: PrismaClient) { }
 
 
-    async updateMany(data: { where: Prisma.TaskWhereInput; data: Prisma.TaskUpdateInput; }): Promise<{count : number}> {
-        return this.prisma.task.updateMany({...data });
+    updatePriority(data: { taskId: number; priority: TaskPriority; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { priority: data.priority },
+            select: taskWithProjectSelect,
+        });
     }
 
+    updateCategory(data: { taskId: number; category: TaskCategory; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { category: data.category },
+            select: taskWithProjectSelect,
+        });
+    }
+
+    async updateDescription(data: { taskId: number; description: string; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { description: data.description },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async deletedTaskComments(taskId: number): Promise<void> {
+        await this.prisma.taskComment.deleteMany({
+            where: { taskId },
+        });
+    }
+
+    async delete(id: number): Promise<void> {
+        await this.prisma.task.delete({
+            where: { id },
+        });
+    }
+
+    async updateStatus(data: { taskId: number; status: TaskStatus; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { status: data.status },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async updateTitle(data: { taskId: number; title: string; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { title: data.title },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async updateDeadline(data: { taskId: number; deadline: Date; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { deadline: data.deadline },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async updateDesignatedTo(data: { taskId: number; designatedTo: number; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { designatedTo: data.designatedTo },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async updateDesignatedBy(data: { taskId: number; designatedBy: number; }): Promise<TaskResponse> {
+        return this.prisma.task.update({
+            where: { id: data.taskId },
+            data: { designatedBy: data.designatedBy },
+            select: taskWithProjectSelect,
+        });
+    }
+
+
+    async updateMany(data: { where: Prisma.TaskWhereInput; data: Prisma.TaskUpdateInput; }): Promise<{ count: number }> {
+        return this.prisma.task.updateMany({ ...data });
+    }
 
 
 
@@ -42,7 +142,7 @@ export class TaskRepository implements I_TaskRepository {
         });
     }
 
-    async create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskWithProject> {
+    async create(data: { createTaskDto: CreateTaskDto, createdByUserId: number }): Promise<TaskResponse> {
         return this.prisma.task.create({
             data: {
                 ...data.createTaskDto,
@@ -53,7 +153,7 @@ export class TaskRepository implements I_TaskRepository {
     }
 
 
-    async findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskWithProject[]> {
+    async findAllByProjectId(data: { projectId: number; filters: GetAllTasksByProjectIdFiltersDto }): Promise<TaskResponse[]> {
 
         const where: Prisma.TaskWhereInput = {
             projectId: data.projectId,
@@ -74,7 +174,7 @@ export class TaskRepository implements I_TaskRepository {
         })
     }
 
-    async addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskWithProject> {
+    async addTaskComment(data: { addTaskCommentDto: AddTaskCommentDto, userId: number, taskId: number }): Promise<TaskResponse> {
 
         await this.prisma.taskComment.create({
             data: {
@@ -87,7 +187,7 @@ export class TaskRepository implements I_TaskRepository {
         return (await this.findById(data.taskId))!;
     }
 
-    async findById(id: number): Promise<TaskWithProject | null> {
+    async findById(id: number): Promise<TaskResponse | null> {
         return this.prisma.task.findFirst({
             where: { id },
             select: taskWithProjectSelect,

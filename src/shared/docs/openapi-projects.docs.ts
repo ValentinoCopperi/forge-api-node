@@ -54,13 +54,23 @@ export const projectsOpenApiSchemas = {
 };
 
 export const projectsOpenApiPaths = {
-    "/projects": {
+    "/organizations/{organizationId}/projects": {
         post: {
             tags: ["Projects"],
-            summary: "Crear proyecto",
+            summary: "Crear proyecto en una organización",
             description:
-                "Requiere JWT. El body incluye `organizationId`; el middleware valida permiso `add-project` en esa organización.",
+                "Requiere JWT. Montado bajo `/api/v1/organizations`. " +
+                "El middleware valida permiso `add-project` usando `organizationId` del path. " +
+                "El body también incluye `organizationId` (debe coincidir con el path).",
             operationId: "projects_create",
+            parameters: [
+                {
+                    name: "organizationId",
+                    in: "path",
+                    required: true,
+                    schema: { type: "integer" },
+                },
+            ],
             requestBody: {
                 required: true,
                 content: jsonContent(ref("CreateProjectBody")),

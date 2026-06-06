@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   APP_PORT: z.coerce.number().default(3000),
+  CLIENT_URL: z.string().url().default("http://localhost:5173"),
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string(),
   JWT_REFRESH_SECRET: z.string(),
