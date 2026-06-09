@@ -77,4 +77,9 @@ export class AuthController {
       data: user,
     });
   }
+
+  async logout(_req: Request, res: Response) {
+    const result = await this.authService.logout();
+    return res.status(200).json(result);
+  }
 }

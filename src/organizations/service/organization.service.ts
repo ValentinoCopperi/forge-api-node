@@ -1,4 +1,11 @@
-import { AddUserToOrganizationDto, CreateOrganizationDto, RemoveUserFromOrganizationDto } from "../dtos/organizations.dto";
+import {
+    AddUserToOrganizationDto,
+    CreateOrganizationDto,
+    OrganizationProjectRelationDto,
+    RemoveUserFromOrganizationDto,
+    UpdateOrganizationDto,
+    UpdateUserOrganizationRoleDto,
+} from "../dtos/organizations.dto";
 import { OrganizationRepository } from "../repositories/organization.repository";
 import {
     OrganizationCreateResponse,
@@ -7,22 +14,22 @@ import {
 } from "../types/organizations.types";
 import { AppError } from "../../shared/errors/AppError";
 
-
 interface I_OrganizationService {
     create(createOrganization: CreateOrganizationDto, userId: number): Promise<OrganizationCreateResponse>
     findAll(): Promise<OrganizationsGetAll[]>
     findOne(id: number): Promise<OrganizationFindOneResponse>
+    update(id: number, data: UpdateOrganizationDto): Promise<OrganizationFindOneResponse>
+    remove(id: number): Promise<void>
     addUserToOrganization(data: AddUserToOrganizationDto): Promise<void>
     removeUserFromOrganization(data: RemoveUserFromOrganizationDto): Promise<void>
-    addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
-    removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void>
+    updateUserOrganizationRole(data: UpdateUserOrganizationRoleDto): Promise<void>
+    addProjectToOrganization(data: OrganizationProjectRelationDto): Promise<void>
+    removeProjectFromOrganization(data: OrganizationProjectRelationDto): Promise<void>
 }
-
 
 export class OrganizationService implements I_OrganizationService {
 
     constructor(private readonly organizationRepository: OrganizationRepository) { }
-
 
     async create(data: CreateOrganizationDto, userId: number): Promise<OrganizationCreateResponse> {
         return this.organizationRepository.create(data, userId);
@@ -40,6 +47,25 @@ export class OrganizationService implements I_OrganizationService {
         }
 
         return organization;
+    }
+
+    async update(id: number, data: UpdateOrganizationDto): Promise<OrganizationFindOneResponse> {
+        if (!(await this.organizationRepository.existsById(id))) {
+            throw new AppError(`Organization with id ${id} not found`, 404);
+        }
+
+        return this.organizationRepository.updateOrganization({
+            organizationId: id,
+            ...data,
+        });
+    }
+
+    async remove(id: number): Promise<void> {
+        if (!(await this.organizationRepository.existsById(id))) {
+            throw new AppError(`Organization with id ${id} not found`, 404);
+        }
+
+        await this.organizationRepository.softDelete(id);
     }
 
     async addUserToOrganization(data: AddUserToOrganizationDto): Promise<void> {
@@ -78,11 +104,33 @@ export class OrganizationService implements I_OrganizationService {
         await this.organizationRepository.deleteOrganizationUser(organizationId, userId);
     }
 
-    addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void> {
-        return this.organizationRepository.addProjectToOrganization(data);
+    async updateUserOrganizationRole(data: UpdateUserOrganizationRoleDto): Promise<void> {
+        const { organizationId, userId } = data;
+
+        if (!(await this.organizationRepository.existsById(organizationId))) {
+            throw new AppError(`Organization with id ${organizationId} not found`, 404);
+        }
+
+        if (!(await this.organizationRepository.userMembershipExists(organizationId, userId))) {
+            throw new AppError(`User with id ${userId} not found in organization with id ${organizationId}`, 404);
+        }
+
+        await this.organizationRepository.updateUserOrganizationRole(data);
     }
 
-    removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void> {
-        return this.organizationRepository.removeProjectFromOrganization(data);
+    async addProjectToOrganization(data: OrganizationProjectRelationDto): Promise<void> {
+        if (!(await this.organizationRepository.existsById(data.organizationId))) {
+            throw new AppError(`Organization with id ${data.organizationId} not found`, 404);
+        }
+
+        await this.organizationRepository.addProjectToOrganization(data);
+    }
+
+    async removeProjectFromOrganization(data: OrganizationProjectRelationDto): Promise<void> {
+        if (!(await this.organizationRepository.existsById(data.organizationId))) {
+            throw new AppError(`Organization with id ${data.organizationId} not found`, 404);
+        }
+
+        await this.organizationRepository.removeProjectFromOrganization(data);
     }
 }

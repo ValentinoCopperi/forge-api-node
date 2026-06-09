@@ -66,9 +66,10 @@ export class TaskController {
     }
 
     async addTaskComment(req: Request, res: Response) {
-        const { projectId } = req.params;
-        if (!projectId || isNaN(Number(projectId))) {
-            throw new AppError('projectId is required and must be a number', 400);
+        const taskId = Number(req.params.taskId);
+
+        if (!Number.isFinite(taskId)) {
+            throw new AppError('taskId is required and must be a number', 400);
         }
 
         const userId = req.user?.sub;
@@ -84,7 +85,11 @@ export class TaskController {
             });
         }
 
-        const data = await this.taskService.addTaskComment({ addTaskCommentDto: body.data, userId: Number(userId), taskId: Number(projectId) });
+        const data = await this.taskService.addTaskComment({
+            addTaskCommentDto: body.data,
+            userId: Number(userId),
+            taskId,
+        });
         return res.status(201).json({ data })
     }
 

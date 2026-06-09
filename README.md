@@ -143,6 +143,8 @@ Base URL: `http://localhost:<APP_PORT>/api/v1`
 | POST | `/auth/create` | `{ name, email, password }` | **[RL]** Registra un nuevo usuario |
 | POST | `/auth/signin` | `{ email, password }` | **[RL]** Inicia sesión; devuelve `accessToken` y `refreshToken` |
 | POST | `/auth/refresh` | `{ refresh_token }` | **[RL]** Renueva el `accessToken` |
+| POST | `/auth/logout` | — | **[Auth][RL]** Cierra sesión del cliente |
+| GET | `/auth/me` | — | **[Auth]** Devuelve el usuario autenticado |
 | POST | `/auth/uploadAvatar` | `multipart/form-data: avatar` | **[Auth][RL]** Sube avatar; guarda en MinIO |
 
 Validaciones: `name` mín. 1 char · `email` válido · `password` mín. 6 chars.
@@ -154,8 +156,13 @@ Validaciones: `name` mín. 1 char · `email` válido · `password` mín. 6 chars
 | GET | `/organizations` | **[Auth]** Lista todas las organizaciones |
 | GET | `/organizations/:id` | **[Auth]** Obtiene una organización por ID |
 | POST | `/organizations` | **[Auth]** Crea una organización (rol de app: `DIRECTOR` o `GERENTE`) |
+| PATCH | `/organizations/:id` | **[Auth]** Actualiza una organización (permiso `update`) |
+| DELETE | `/organizations/:id` | **[Auth]** Elimina (soft delete) una organización (permiso `delete`) |
 | POST | `/organizations/:orgId/users` | **[Auth]** Agrega un usuario a la org (permiso `add-user`) |
+| PATCH | `/organizations/:orgId/users` | **[Auth]** Actualiza rol de un usuario (permiso `update-user-role`) |
 | DELETE | `/organizations/:orgId/users` | **[Auth]** Elimina un usuario de la org (permiso `remove-user`) |
+| POST | `/organizations/:orgId/projects/link` | **[Auth]** Vincula un proyecto existente a la org (permiso `add-project`) |
+| DELETE | `/organizations/:orgId/projects/link` | **[Auth]** Desvincula (soft delete) un proyecto (permiso `remove-project`) |
 
 Body `POST /:orgId/users`: `{ organizationId, userId, role: OrganizationUserRole }`  
 Body `DELETE /:orgId/users`: `{ organizationId, userId }`
@@ -164,7 +171,11 @@ Body `DELETE /:orgId/users`: `{ organizationId, userId }`
 
 | Método | Ruta | Descripción |
 |---|---|---|
+| GET | `/organizations/:orgId/projects` | **[Auth]** Lista proyectos de la organización |
+| GET | `/organizations/:orgId/projects/:projectId` | **[Auth]** Obtiene un proyecto por ID |
 | POST | `/organizations/:orgId/projects` | **[Auth]** Crea un proyecto en la organización (permiso `add-project`) |
+| PATCH | `/organizations/:orgId/projects/:projectId` | **[Auth]** Actualiza un proyecto (permiso `add-project`) |
+| DELETE | `/organizations/:orgId/projects/:projectId` | **[Auth]** Elimina (soft delete) un proyecto (permiso `remove-project`) |
 
 Body: `{ name (mín. 3), description?, managerId, organizationId }`
 

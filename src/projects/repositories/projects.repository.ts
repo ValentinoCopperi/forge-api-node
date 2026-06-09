@@ -22,6 +22,14 @@ interface I_ProjectsRepository {
 
     delete(id: number): Promise<void>
 
+    findAllByOrganizationId(organizationId: number): Promise<ProjectResponse[]>
+
+    findByOrganizationAndId(data: {
+        organizationId: number;
+        projectId: number;
+    }): Promise<ProjectResponse | null>
+
+    softDelete(data: { organizationId: number; projectId: number }): Promise<void>
 }
 
 
@@ -61,6 +69,45 @@ export class ProjectsRepository implements I_ProjectsRepository {
     async delete(id: number): Promise<void> {
         await this.prisma.project.delete({
             where: { id },
+        });
+    }
+
+    findAllByOrganizationId(organizationId: number): Promise<ProjectResponse[]> {
+        return this.prisma.project.findMany({
+            where: { organizationId, deletedAt: null },
+            select: { ...projectCreateSelect },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    findByOrganizationAndId(data: {
+        organizationId: number;
+        projectId: number;
+    }): Promise<ProjectResponse | null> {
+        return this.prisma.project.findFirst({
+            where: {
+                id: data.projectId,
+                organizationId: data.organizationId,
+                deletedAt: null,
+            },
+            select: { ...projectCreateSelect },
+        });
+    }
+
+    async softDelete(data: {
+        organizationId: number;
+        projectId: number;
+    }): Promise<void> {
+        await this.prisma.project.updateMany({
+            where: {
+                id: data.projectId,
+                organizationId: data.organizationId,
+                deletedAt: null,
+            },
+            data: {
+                deletedAt: new Date(),
+                status: ProjectStatus.DELETED,
+            },
         });
     }
 

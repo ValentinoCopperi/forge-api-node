@@ -22,6 +22,7 @@ interface I_AuthService {
     file: Express.Multer.File;
   }): Promise<UserWithRole>;
   getUser(userId: number): Promise<UserWithRole>;
+  logout(): Promise<{ message: string }>;
 }
 
 export class AuthService implements I_AuthService {
@@ -123,5 +124,9 @@ export class AuthService implements I_AuthService {
     const user = await this.authRepository.findById(userId);
     if (!user) throw new AppError(`User with ID ${userId} not found`, 404);
     return user;
+  }
+
+  logout(): Promise<{ message: string }> {
+    return Promise.resolve({ message: "Signed out successfully" });
   }
 }

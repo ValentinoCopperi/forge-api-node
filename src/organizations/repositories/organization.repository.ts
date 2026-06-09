@@ -1,4 +1,4 @@
-import { OrganizationUserRole, PrismaClient } from "@prisma/client";
+import { OrganizationUserRole, PrismaClient, ProjectStatus } from "@prisma/client";
 import { AddUserToOrganizationDto, CreateOrganizationDto } from "../dtos/organizations.dto";
 import { OrganizationCreateResponse, organizationCreateSelect, OrganizationFindOneResponse, organizationFindOneSelect, OrganizationsGetAll, organizationsGetAllSelect } from "../types/organizations.types";
 
@@ -14,10 +14,9 @@ interface I_OrganizationRepository {
     deleteOrganizationUser(organizationId: number, userId: number): Promise<void>
     addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
     removeProjectFromOrganization(data: { organizationId: number, projectId: number }): Promise<void>
-    addProjectToOrganization(data: { organizationId: number, projectId: number }): Promise<void>
-    updateDescription(data: { organizationId: number, description: string }): Promise<OrganizationFindOneResponse>
-    updateName(data: { organizationId: number, name: string }): Promise<OrganizationFindOneResponse>
-    delete(id: number): Promise<void>
+    updateOrganization(data: { organizationId: number, name?: string, description?: string }): Promise<OrganizationFindOneResponse>
+    updateUserOrganizationRole(data: { organizationId: number, userId: number, role: OrganizationUserRole }): Promise<void>
+    softDelete(id: number): Promise<void>
 }
 
 export class OrganizationRepository implements I_OrganizationRepository {
@@ -28,44 +27,68 @@ export class OrganizationRepository implements I_OrganizationRepository {
     constructor(private readonly prisma: PrismaClient) { }
 
 
-    async updateDescription(data: { organizationId: number; description: string; }): Promise<OrganizationFindOneResponse> {
+    async updateOrganization(data: {
+        organizationId: number;
+        name?: string;
+        description?: string;
+    }): Promise<OrganizationFindOneResponse> {
         return this.prisma.organization.update({
             where: { id: data.organizationId },
-            data: { description: data.description },
-            select: { ...organizationFindOneSelect },
-        });
-    }
-    updateName(data: { organizationId: number; name: string; }): Promise<OrganizationFindOneResponse> {
-        return this.prisma.organization.update({
-            where: { id: data.organizationId },
-            data: { name: data.name },
+            data: {
+                ...(data.name !== undefined ? { name: data.name } : {}),
+                ...(data.description !== undefined
+                    ? { description: data.description }
+                    : {}),
+            },
             select: { ...organizationFindOneSelect },
         });
     }
 
-    async delete(id: number): Promise<void> {
-        await this.prisma.organization.delete({
+    async updateUserOrganizationRole(data: {
+        organizationId: number;
+        userId: number;
+        role: OrganizationUserRole;
+    }): Promise<void> {
+        await this.prisma.organizationUser.updateMany({
+            where: {
+                organizationId: data.organizationId,
+                userId: data.userId,
+            },
+            data: { role: data.role },
+        });
+    }
+
+    async softDelete(id: number): Promise<void> {
+        await this.prisma.organization.update({
             where: { id },
+            data: { deletedAt: new Date() },
         });
     }
-
 
     addProjectToOrganization(data: { organizationId: number; projectId: number; }): Promise<void> {
         return this.prisma.$transaction(async (tx) => {
-            await tx.organization.update({
-                where: { id: data.organizationId },
-                data: {
-                    projects: {
-                        connect: { id: data.projectId },
-                    },
-                },
+            await tx.project.update({
+                where: { id: data.projectId },
+                data: { organizationId: data.organizationId },
             });
         });
     }
 
-
-    async removeProjectFromOrganization(_data: { organizationId: number, projectId: number }): Promise<void> {
-        throw new Error("Method not implemented.");
+    async removeProjectFromOrganization(data: {
+        organizationId: number;
+        projectId: number;
+    }): Promise<void> {
+        await this.prisma.project.updateMany({
+            where: {
+                id: data.projectId,
+                organizationId: data.organizationId,
+                deletedAt: null,
+            },
+            data: {
+                deletedAt: new Date(),
+                status: ProjectStatus.DELETED,
+            },
+        });
     }
 
 

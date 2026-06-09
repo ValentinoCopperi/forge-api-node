@@ -38,6 +38,6 @@ jobs:
           file: dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/forge-api-node:1.0
+            ${{ secrets.DOCKERHUB_USERNAME }}/forge-api-node:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/forge-api-node:latest
     

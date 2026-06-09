@@ -26,8 +26,12 @@ export class AuthRoutes {
       this.authController.login(req, res),
     );
 
-    this.router.get(`/me` , tokenMiddleware, (req, res) =>
+    this.router.get(`/me`, tokenMiddleware, (req, res) =>
       this.authController.getUser(req, res),
+    );
+
+    this.router.post(`/logout`, tokenMiddleware, (req, res) =>
+      this.authController.logout(req, res),
     );
 
     this.router.post(
